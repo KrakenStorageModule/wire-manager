@@ -1,8 +1,8 @@
 # Wire Manager
 
-**[Live Tool: krakenstoragemodule.github.io/wire-manager](https://krakenstoragemodule.github.io/wire-manager/)**
+**[Live Tool Demo: krakenstoragemodule.github.io/wire-manager](https://krakenstoragemodule.github.io/wire-manager/)**
 
-Wire Manager helps you stop mis-wiring your hardware projects. Instead of cross-referencing datasheets on six different browser tabs, you can just pick your MCU, add your parts, and see exactly where everything should plug in.
+Wire Manager helps you stop mis-wiring your hardware projects. Instead of cross-referencing datasheets on six different browser tabs, you can just pick your MCU, add your parts, and see exactly where everything should plug in. (yes it IS evangelion themed!)
 
 It automatically handles the annoying stuff like checking which pins actually support SPI or I2C, flagging voltage mismatches (3.3V vs 5V), and generating C++ header code so you don't have to manual-type every #define.
 
