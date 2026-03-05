@@ -9,22 +9,22 @@ It automatically handles the annoying stuff like checking which pins actually su
 ### Highlights
 - **Smart Pin Mapping:** Knows the hardware-specific functions for MCUs like Teensy, ESP32, and STM32.
 - **Datasheet Parsing:** Drop a PDF or formatted JSON, and it'll try to find the pinout for you automatically.
-  (JSON Format):
+  (JSON Format):<br>
   {
-  "id": "my_sensor_01",
-  "name": "Custom Sensor",
-  "category": "Sensors",
-  "protocol": "I2C",
-  "voltage": 3.3,
-  "currentmA": 10,
-  "icon": "SNR",
-  "signals": [
-    { "name": "SDA", "type": "I2C_SDA", "requireUnique": false },
-    { "name": "SCL", "type": "I2C_SCL", "requireUnique": false },
-    { "name": "VCC", "type": "POWER_3V3", "requireUnique": false },
-    { "name": "GND", "type": "GND", "requireUnique": false }
-  ]
-}
+  "id": "my_sensor_01",<br>
+  "name": "Custom Sensor",<br>
+  "category": "Sensors",<br>
+  "protocol": "I2C",<br>
+  "voltage": 3.3,<br>
+  "currentmA": 10,<br>
+  "icon": "SNR",<br>
+  "signals": [<br>
+    { "name": "SDA", "type": "I2C_SDA", "requireUnique": false },<br>
+    { "name": "SCL", "type": "I2C_SCL", "requireUnique": false },<br>
+    { "name": "VCC", "type": "POWER_3V3", "requireUnique": false },<br>
+    { "name": "GND", "type": "GND", "requireUnique": false }<br>
+  ]<br>
+}<br>
 
 - **Instant Code:** Export your wiring directly as a `.h` file for your firmware.
 
@@ -32,9 +32,3 @@ It automatically handles the annoying stuff like checking which pins actually su
 It's just a static site, so you can run it anywhere. If you're working locally, use `npx serve .` to make sure the ES modules load correctly.
 
 ---
-
-<div align="center">
-  <img src="https://img.shields.io/badge/STATUS-SYNCHRONIZED-7030A0?style=for-the-badge" alt="Status">
-  <img src="https://img.shields.io/badge/INTERFACE-TERMINAL-000000?style=for-the-badge" alt="Interface">
-  <img src="https://img.shields.io/badge/VERSION-1.0.42-B5E61D?style=for-the-badge" alt="Version">
-</div>
