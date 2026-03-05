@@ -14,10 +14,13 @@
     --accent-glow: rgba(148, 230, 0, 0.2);
     --accent-secondary: #7b2096;
 
-    --color-spi: #d699ff;
+    --color-spi: #b05cff;
+    --color-spi-dark: #892bde;
     --color-i2c: #94e600;
+    --color-i2c-dark: #6ea800;
     --color-can: #ffb14d;
-    --color-uart: #7ac4ff;
+    --color-uart: #3ba3ff;
+    --color-uart-dark: #1f6fd1;
     --color-pwm: #4de5ff;
     --color-power: #ff4d4d;
     --color-gnd: #888888;
@@ -127,10 +130,33 @@ h3 {
 /* Sidebar */
 .sidebar {
     width: 340px;
+    min-width: 280px;
+    max-width: 600px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-glass);
     background: rgba(15, 23, 42, 0.4);
+    position: relative;
+    user-select: none;
+}
+
+/* Sidebar Resizer */
+.sidebar-resizer {
+    width: 6px;
+    cursor: col-resize;
+    background: transparent;
+    transition: background 0.2s;
+    position: absolute;
+    top: 0;
+    right: -3px;
+    bottom: 0;
+    z-index: 10;
+}
+
+.sidebar-resizer:hover,
+.sidebar-resizer.resizing {
+    background: var(--accent-primary);
+    box-shadow: 0 0 10px var(--accent-glow);
 }
 
 .sidebar-section {
@@ -339,15 +365,17 @@ h3 {
 .chip.active {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
-    color: #050008;
+    color: #2d0052;
     box-shadow: 0 4px 12px rgba(166, 255, 0, 0.4);
 }
 
 /* Catalog Grid */
 .catalog-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* ==========================================
@@ -356,15 +384,18 @@ h3 {
 .mcu-card,
 .component-card {
     background: var(--bg-card);
-    border: 2px solid rgba(148, 230, 0, 0.1);
+    border: 1px solid rgba(148, 230, 0, 0.1);
     border-radius: var(--radius-md);
-    padding: 20px;
+    padding: 12px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    min-width: 0;
+    /* Prevent flex overflow */
 }
 
 .mcu-card:hover,
@@ -611,7 +642,7 @@ h3 {
 }
 
 .mcu-pin-label.active {
-    fill: #050008;
+    fill: #2d0052;
     font-weight: 800;
 }
 

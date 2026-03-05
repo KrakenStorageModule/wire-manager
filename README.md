@@ -13,3 +13,25 @@ It automatically handles the annoying stuff like checking which pins actually su
 
 ### Running it
 It's just a static site, so you can run it anywhere. If you're working locally, use `npx serve .` to make sure the ES modules load correctly.
+
+### Custom Component Format
+You can drop in your own components via JSON. Here is the structure for a standard sensor:
+
+```json
+{
+  "id": "my_sensor_01",
+  "name": "Custom Sensor",
+  "category": "Sensors",
+  "protocol": "I2C",
+  "voltage": 3.3,
+  "currentmA": 10,
+  "icon": "SNR",
+  "signals": [
+    { "name": "SDA", "type": "I2C_SDA", "requireUnique": false },
+    { "name": "SCL", "type": "I2C_SCL", "requireUnique": false },
+    { "name": "VCC", "type": "POWER_3V3", "requireUnique": false },
+    { "name": "GND", "type": "GND", "requireUnique": false }
+  ]
+}
+```
+Load this via the **Add JSON** button in the parts library to start routing connections immediately.

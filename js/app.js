@@ -310,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+
         // Listen for engine recalculations
         document.addEventListener('engine-recalculated', (e) => {
             updatePinTable(e.detail.assignments);
@@ -320,6 +321,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Sidebar Resizing
+    const sidebar = document.getElementById('app-sidebar');
+    const resizer = document.getElementById('sidebar-resizer');
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        resizer.classList.add('resizing');
+        document.body.style.cursor = 'col-resize';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const newWidth = e.clientX;
+        if (newWidth >= 280 && newWidth <= 600) {
+            sidebar.style.width = `${newWidth}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            resizer.classList.remove('resizing');
+            document.body.style.cursor = 'default';
+        }
+    });
 
     function showToast(message, level = 'ok') {
         const container = document.getElementById('toast-container');
@@ -364,6 +393,36 @@ document.addEventListener('DOMContentLoaded', () => {
         svg += `<text x="${totalWidth / 2}" y="${cy + 30}" text-anchor="middle" fill="var(--accent-primary)" style="font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">${mcu.name}</text>`;
         svg += `<text x="${totalWidth / 2}" y="${cy + 50}" text-anchor="middle" fill="var(--text-muted)" style="font-size: 8px;">HARDWARE PINOUT SPECIFICATION</text>`;
 
+        // --- Shared Bus Visualization (Shared Lines connecting pins to labels) ---
+        const busLines = {
+            'SPI': { color: 'var(--color-spi)', textColor: '#2d0052', pins: [] },
+            'I2C': { color: 'var(--color-i2c)', textColor: '#2d0052', pins: [] },
+            'UART': { color: 'var(--color-uart)', textColor: '#2d0052', pins: [] }
+        };
+
+        // Determine which pins are involved in shared buses using robust type checking
+        assignments.forEach(a => {
+            const comp = engine.components.find(c => c.instanceId === a.compInstanceId);
+            if (!comp) return;
+
+            const sigDef = comp.data.signals.find(s => s.name === a.signalName);
+            const sigType = sigDef ? sigDef.type : '';
+
+            if (comp.data.protocol === 'SPI' && sigType.startsWith('SPI') && sigType !== 'SPI_CS') {
+                busLines['SPI'].pins.push({ pinId: a.mcuPinId, signal: a.signalName });
+            }
+            if (comp.data.protocol === 'I2C' && sigType.startsWith('I2C')) {
+                busLines['I2C'].pins.push({ pinId: a.mcuPinId, signal: a.signalName });
+            }
+            if (comp.data.protocol === 'UART' && sigType.startsWith('UART')) {
+                busLines['UART'].pins.push({ pinId: a.mcuPinId, signal: a.signalName });
+            }
+            // For older generic component definitions that use GPIO/Analog but named it TX/RX
+            if ((a.signalName === 'TX' || a.signalName === 'RX') && !busLines['UART'].pins.find(bp => bp.pinId === a.mcuPinId)) {
+                busLines['UART'].pins.push({ pinId: a.mcuPinId, signal: a.signalName });
+            }
+        });
+
         // Pins
         mcu.pins.forEach((pin, index) => {
             const isRightSide = index >= pinsPerSide;
@@ -383,6 +442,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Pin wire/lead
             svg += `<line x1="${isRightSide ? cx + chipWidth : cx}" y1="${py + 10}" x2="${isRightSide ? px : px + pinWidth}" y2="${py + 10}" stroke="${isActive ? 'var(--accent-primary)' : 'var(--border-glass)'}" stroke-width="1" />`;
 
+            // Shared Bus Indicators
+            for (const bus in busLines) {
+                const busPin = busLines[bus].pins.find(bp => bp.pinId === pin.id);
+                if (busPin) {
+                    // Draw a small colorful dot next to the pin to indicate bus membership
+                    const dotX = isRightSide ? cx + chipWidth + 5 : cx - 5;
+                    svg += `<circle cx="${dotX}" cy="${py + 10}" r="3" fill="${busLines[bus].color}" />`;
+                }
+            }
+
             // Pin Rectangle
             svg += `<rect x="${px}" y="${py}" width="${pinWidth}" height="20" rx="2" class="${rectClass}" />`;
 
@@ -393,21 +462,86 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isActive) {
                 const comp = engine.components.find(c => c.instanceId === assignment.compInstanceId);
                 const compName = comp?.data.name || 'Component';
-                const labelX = isRightSide ? px + pinWidth + 10 : px - 10;
+                const labelX = (isRightSide ? px + pinWidth + 15 : px - 15);
                 const fullLabel = `${compName} • ${assignment.signalName}`;
 
-                svg += `<text x="${labelX}" y="${py + 13}" text-anchor="${isRightSide ? 'start' : 'end'}" fill="var(--accent-primary)" style="font-size: 10px; font-weight: 800;">${fullLabel}</text>`;
-                svg += `<line x1="${isRightSide ? px + pinWidth : px}" y1="${py + 10}" x2="${labelX}" y2="${py + 10}" stroke="var(--accent-primary)" stroke-width="0.5" stroke-dasharray="2,2" />`;
+                // Color label based on protocol
+                let labelColor = 'var(--accent-primary)';
+                if (comp?.data.protocol === 'SPI') labelColor = 'var(--color-spi)';
+                else if (comp?.data.protocol === 'I2C') labelColor = 'var(--color-i2c)';
+                else if (comp?.data.protocol === 'UART' || assignment.signalName === 'TX' || assignment.signalName === 'RX') labelColor = 'var(--color-uart)';
+
+                // Calculate pill dimensions
+                const approxChars = fullLabel.length;
+                const minWidth = 40;
+                const textWidth = Math.max(minWidth, approxChars * 5.8 + 16);
+
+                // Position logic for pill box
+                const rx = isRightSide ? labelX : (labelX - textWidth);
+
+                // Connector line
+                svg += `<line x1="${isRightSide ? px + pinWidth : px}" y1="${py + 10}" x2="${isRightSide ? rx : rx + textWidth}" y2="${py + 10}" stroke="${labelColor}" stroke-width="1" stroke-dasharray="2,2" />`;
+
+                // Pill Background
+                svg += `<rect x="${rx}" y="${py + 3}" width="${textWidth}" height="14" rx="7" fill="${labelColor}" />`;
+
+                // Centered Text inside pill
+                const tx = rx + (textWidth / 2);
+                svg += `<text x="${tx}" y="${py + 12}" text-anchor="middle" fill="#2d0052" style="font-size: 8.5px; font-weight: 800; letter-spacing: 0.5px;">${fullLabel}</text>`;
             }
         });
 
-        // Unassigned Signals Block (Enhanced Alert)
+        // DRAW BUS TRUNKS (Shared vertical lines for buses)
+        for (const bus in busLines) {
+            const pins = busLines[bus].pins;
+            if (pins.length < 1) continue;
+
+            const pinIndices = pins.map(p => mcu.pins.findIndex(mp => mp.id === p.pinId)).filter(i => i !== -1);
+            if (pinIndices.length === 0) continue;
+
+            // Separate into left side and right side pins
+            const leftIndices = pinIndices.filter(i => i < pinsPerSide);
+            const rightIndices = pinIndices.filter(i => i >= pinsPerSide);
+
+            const drawTrunk = (indices, isRight) => {
+                if (indices.length === 0) return;
+
+                const sideIndices = isRight ? indices.map(i => i - pinsPerSide) : indices;
+                const minIdx = Math.min(...sideIndices);
+                const maxIdx = Math.max(...sideIndices);
+
+                let trunkY1 = cy + 40 + (minIdx * pinHeight) + 10;
+                let trunkY2 = cy + 40 + (maxIdx * pinHeight) + 10;
+
+                // Make sure the trunk isn't essentially 0 height if only 1 pin is present
+                if (minIdx === maxIdx) {
+                    trunkY1 -= 10;
+                    trunkY2 += 10;
+                }
+
+                const trunkX = isRight ? cx + chipWidth + 10 : cx - 10;
+
+                // Draw the main trunk of the bus
+                svg += `<line x1="${trunkX}" y1="${trunkY1}" x2="${trunkX}" y2="${trunkY2}" stroke="${busLines[bus].color}" stroke-width="2" stroke-opacity="0.8" />`;
+
+                // Add Pill Label for the bus trunk
+                const textWidth = bus.length * 6 + 14;
+                svg += `<rect x="${trunkX - textWidth / 2}" y="${trunkY1 - 13}" width="${textWidth}" height="11" rx="5.5" fill="${busLines[bus].color}" />`;
+                svg += `<text x="${trunkX}" y="${trunkY1 - 4.5}" text-anchor="middle" fill="${busLines[bus].textColor}" style="font-size: 7.5px; font-weight: 900; letter-spacing: 1px;">${bus}</text>`;
+            };
+
+            drawTrunk(leftIndices, false);
+            drawTrunk(rightIndices, true);
+        }
+
+        // Blocks for Faults and Warnings
+        let currentBoxY = cy + chipHeight + 40;
+
+        // 1. SIGNAL FAULT Block (Unassigned)
         const unassigned = assignments.filter(a => a.mcuPinId === 'UNASSIGNED');
         if (unassigned.length > 0) {
-            const boxY = cy + chipHeight + 40;
             const boxHeight = unassigned.length * 18 + 45;
 
-            // Hazard Pattern Definition
             svg += `<defs>
                 <pattern id="hazardPattern" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
                     <rect width="5" height="10" fill="rgba(255, 51, 102, 0.15)"></rect>
@@ -415,15 +549,49 @@ document.addEventListener('DOMContentLoaded', () => {
             </defs>`;
 
             svg += `<g class="mcu-warning-block">`;
-            svg += `<rect x="${cx}" y="${boxY}" width="${chipWidth}" height="${boxHeight}" rx="0" fill="url(#hazardPattern)" stroke="var(--status-error)" stroke-width="2" />`;
-            svg += `<rect x="${cx}" y="${boxY}" width="${chipWidth}" height="20" fill="var(--status-error)" />`;
-            svg += `<text x="${cx + chipWidth / 2}" y="${boxY + 14}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: 900; letter-spacing: 2px;">⚠️ SIGNAL FAULT</text>`;
+            svg += `<rect x="${cx}" y="${currentBoxY}" width="${chipWidth}" height="${boxHeight}" rx="0" fill="url(#hazardPattern)" stroke="var(--status-error)" stroke-width="2" />`;
+            svg += `<rect x="${cx}" y="${currentBoxY}" width="${chipWidth}" height="20" fill="var(--status-error)" />`;
+            svg += `<text x="${cx + chipWidth / 2}" y="${currentBoxY + 14}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: 900; letter-spacing: 2px;">⚠️ SIGNAL FAULT</text>`;
 
             unassigned.forEach((ua, i) => {
                 const comp = engine.components.find(c => c.instanceId === ua.compInstanceId);
                 const compName = comp?.data.name || 'Unknown';
-                svg += `<text x="${cx + 10}" y="${boxY + 38 + (i * 18)}" fill="var(--text-main)" style="font-size: 9px; font-weight: bold;">${compName} > ${ua.signalName}</text>`;
-                svg += `<text x="${cx + 10}" y="${boxY + 48 + (i * 18)}" fill="var(--status-error)" style="font-size: 7px; text-transform: uppercase; font-weight: 800;">UNASSIGNED</text>`;
+                svg += `<text x="${cx + 10}" y="${currentBoxY + 38 + (i * 18)}" fill="var(--text-main)" style="font-size: 9px; font-weight: bold;">${compName} > ${ua.signalName}</text>`;
+                svg += `<text x="${cx + 10}" y="${currentBoxY + 48 + (i * 18)}" fill="var(--status-error)" style="font-size: 7px; text-transform: uppercase; font-weight: 800;">UNASSIGNED</text>`;
+            });
+            svg += `</g>`;
+            currentBoxY += boxHeight + 20;
+        }
+
+        // 2. LOGIC WARNING Block (Voltage Mismatches, etc)
+        const withWarnings = assignments.filter(a => a.mcuPinId !== 'UNASSIGNED' && a.warnings.length > 0);
+        if (withWarnings.length > 0) {
+            // Count total unique warnings
+            const warningItems = [];
+            withWarnings.forEach(a => {
+                const comp = engine.components.find(c => c.instanceId === a.compInstanceId);
+                const compName = comp?.data.name || 'Unknown';
+                a.warnings.forEach(w => {
+                    warningItems.push({ title: `${compName} > ${a.signalName}`, text: w });
+                });
+            });
+
+            const boxHeight = warningItems.length * 24 + 45;
+
+            svg += `<defs>
+                <pattern id="warnPattern" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="5" height="10" fill="rgba(255, 144, 0, 0.1)"></rect>
+                </pattern>
+            </defs>`;
+
+            svg += `<g class="mcu-logic-warning-block">`;
+            svg += `<rect x="${cx}" y="${currentBoxY}" width="${chipWidth}" height="${boxHeight}" rx="0" fill="url(#warnPattern)" stroke="var(--status-warn)" stroke-width="2" />`;
+            svg += `<rect x="${cx}" y="${currentBoxY}" width="${chipWidth}" height="20" fill="var(--status-warn)" />`;
+            svg += `<text x="${cx + chipWidth / 2}" y="${currentBoxY + 14}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: 900; letter-spacing: 2px;">⚠️ LOGIC WARNING</text>`;
+
+            warningItems.forEach((wi, i) => {
+                svg += `<text x="${cx + 10}" y="${currentBoxY + 38 + (i * 24)}" fill="var(--status-warn)" style="font-size: 8px; font-weight: 900;">${wi.title}</text>`;
+                svg += `<text x="${cx + 10}" y="${currentBoxY + 48 + (i * 24)}" fill="var(--text-main)" style="font-size: 7px; font-weight: 500;">${wi.text}</text>`;
             });
             svg += `</g>`;
         }
@@ -627,6 +795,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="status-icon"></span>
             <span class="status-text" style="display: flex; align-items: center; justify-content: center;">${status.message}</span>
         `;
+
+
     }
 
 });
