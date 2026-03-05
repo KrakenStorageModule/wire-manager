@@ -26,7 +26,7 @@ It automatically handles the annoying stuff like checking which pins actually su
   ]<br>
 }<br>
 
-- **Instant Code:** Export your wiring directly as a `.h` file for your firmware.
+- **Import/Export:** Export your wiring directly as a `.h` file for your firmware. Can also import/export generated pinout as a json file
 
 ### Running it
 It's just a static site, so you can run it anywhere. If you're working locally, use `npx serve .` to make sure the ES modules load correctly.
