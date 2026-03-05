@@ -220,21 +220,8 @@
     <script src="js/parts-library.js"></script>
     <script src="js/pin-engine.js"></script>
     <script src="js/app.js"></script>
-    <script data-goatcounter="https://jfk.goatcountfker.com/count" async src="//gc.zgo.at/count.js"></script>
-    <script>
-        var t = setInterval(function () {
-            if (window.goatcounter && window.goatcounter.get_data) {
-                clearInterval(t);
-                let path = window.goatcounter.get_data()['p'];
-                let r = new XMLHttpRequest();
-                r.addEventListener('load', function () {
-                    document.querySelector('#visit-count').innerText = JSON.parse(this.responseText).count;
-                });
-                r.open('GET', r.open('GET', 'https://jfk.goatcounter.com/counter/TOTAL.json' + encodeURIComponent(path) + '.json'));
-                r.send();
-            }
-        }, 100);
-    </script>
+<script data-goatcounter="https://jfk.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 </body>
 
 </html>
