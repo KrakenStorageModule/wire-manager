@@ -8,7 +8,24 @@ It automatically handles the annoying stuff like checking which pins actually su
 
 ### Highlights
 - **Smart Pin Mapping:** Knows the hardware-specific functions for MCUs like Teensy, ESP32, and STM32.
-- **Datasheet Parsing:** Drop a PDF in, and it'll try to find the pinout for you automatically.
+- **Datasheet Parsing:** Drop a PDF or formatted JSON, and it'll try to find the pinout for you automatically.
+  (JSON Format):
+  {
+  "id": "my_sensor_01",
+  "name": "Custom Sensor",
+  "category": "Sensors",
+  "protocol": "I2C",
+  "voltage": 3.3,
+  "currentmA": 10,
+  "icon": "SNR",
+  "signals": [
+    { "name": "SDA", "type": "I2C_SDA", "requireUnique": false },
+    { "name": "SCL", "type": "I2C_SCL", "requireUnique": false },
+    { "name": "VCC", "type": "POWER_3V3", "requireUnique": false },
+    { "name": "GND", "type": "GND", "requireUnique": false }
+  ]
+}
+
 - **Instant Code:** Export your wiring directly as a `.h` file for your firmware.
 
 ### Running it
