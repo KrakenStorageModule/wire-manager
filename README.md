@@ -1,5 +1,5 @@
 # Wire Manager
-**UNDER DEVELOPMENT**
+**UNDER HEAVY DEVELOPMENT -> SEE GIT ISSUES FOR MORE INFORMATION**
 **[Live Tool Demo: krakenstoragemodule.github.io/wire-manager](https://krakenstoragemodule.github.io/wire-manager/)**
 
 Wire Manager helps you stop mis-wiring your hardware projects. Instead of cross-referencing datasheets on six different browser tabs, you can just pick your MCU, add your parts, and see exactly where everything should plug in. (yes it IS evangelion themed!)
